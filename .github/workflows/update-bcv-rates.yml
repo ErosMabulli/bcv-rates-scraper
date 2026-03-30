@@ -2,9 +2,9 @@ name: Actualizar tasas BCV
 
 on:
   schedule:
-    - cron: '40 13 * * 1-5'   # 9:40 am Caracas (UTC-4)
-    - cron: '0 18 * * 1-5'    # 2:00 pm Caracas (UTC-4)
-  workflow_dispatch:  # Permite ejecutar manualmente
+    - cron: '40 13 * * 1-5'   # 9:40 am Caracas
+    - cron: '0 18 * * 1-5'    # 2:00 pm Caracas
+  workflow_dispatch:
 
 jobs:
   actualizar:
@@ -21,6 +21,8 @@ jobs:
 
       - name: Instalar dependencias
         run: |
+          pip install --upgrade pip
+          pip install setuptools
           pip install undetected-chromedriver selenium gspread google-auth
 
       - name: Ejecutar scraper
