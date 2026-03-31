@@ -2,14 +2,14 @@ name: Actualizar tasas BCV
 
 on:
   schedule:
-    - cron: '40 13 * * 1-5'   # 9:40 am Caracas
-    - cron: '0 18 * * 1-5'    # 2:00 pm Caracas
+    - cron: '40 13 * * 1-5'
+    - cron: '0 18 * * 1-5'
   workflow_dispatch:
 
 jobs:
   actualizar:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
@@ -17,24 +17,26 @@ jobs:
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'     # Más estable con undetected-chromedriver
+          python-version: '3.11'
 
-      - name: Instalar Chrome estable + dependencias
+      - name: Instalar dependencias del sistema (CORREGIDO)
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip fonts-liberation libappindicator3-1 libasound2 libatk-bridge2.0-0 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgbm1 libgcc1 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 lsb-release xdg-utils
-          
-          # Instalar Chrome estable (versión actual)
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          echo 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          sudo apt-get install -y \
+            libnss3 \
+            libxss1 \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgtk-3-0 \
+            libgbm1
+
+      - name: Instalar Google Chrome (forma correcta)
+        uses: browser-actions/setup-chrome@v1
 
       - name: Instalar dependencias Python
         run: |
           pip install --upgrade pip
-          pip install setuptools
-          pip install undetected-chromedriver selenium gspread google-auth
+          pip install selenium gspread google-auth
 
       - name: Ejecutar scraper
         env:
