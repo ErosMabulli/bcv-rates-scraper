@@ -79,9 +79,9 @@ def actualizar_google_sheets(fecha, euro, dolar):
     ws = sh.worksheet(os.environ["WORKSHEET_NAME"])
 
     # Actualizar celdas
-    ws.update(os.environ["DATE_CELL"], fecha)
-    ws.update(os.environ["EURO_CELL"], euro)
-    ws.update(os.environ["DOLAR_CELL"], dolar)
+    ws.update(os.environ["DATE_CELL"], [[fecha]])
+    ws.update(os.environ["EURO_CELL"], [[euro]])
+    ws.update(os.environ["DOLAR_CELL"], [[dolar]])
 
     print("📊 Google Sheets actualizado correctamente")
 
