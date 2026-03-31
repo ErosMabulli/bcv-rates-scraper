@@ -1,67 +1,88 @@
 import os
 import json
-import undetected_chromedriver as uc
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import gspread
 from google.oauth2.service_account import Credentials
 
-# ===================== CONFIGURACIÓN DESDE GITHUB SECRETS =====================
+# ===================== CONFIG =====================
 URL = "https://www.bcv.org.ve"
 
+# ===================== SCRAPER =====================
 def obtener_tasas_bcv():
-    options = uc.ChromeOptions()
-    options.add_argument("--headless=new")          # Headless moderno (funciona en GitHub)
+    options = Options()
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
-    options.add_argument("--disable-setuid-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-blink-features=AutomationControlled")
 
-    driver = uc.Chrome(options=options, use_subprocess=True)
-    
+    driver = webdriver.Chrome(options=options)
+
     try:
         driver.get(URL)
         wait = WebDriverWait(driver, 20)
+
+        # Esperar que cargue algo clave
         wait.until(EC.presence_of_element_located((By.TAG_NAME, "strong")))
 
-        # Tasas
-        euro = driver.find_element(By.XPATH, "//*[contains(text(),'EUR')]/following::strong[1]").text.strip()
-        dolar = driver.find_element(By.XPATH, "//*[contains(text(),'USD')]/following::strong[1]").text.strip()
+        # Obtener EURO
+        euro = wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'EUR')]/following::strong[1]")
+        )).text.strip()
 
-        # Fecha limpia
-        fecha_element = driver.find_element(By.XPATH, "//*[contains(text(),'Fecha Valor:')]")
-        fecha_completa = fecha_element.text.strip()
-        fecha = fecha_completa.split("Fecha Valor:")[-1].strip()  # Solo "Lunes, 30 Marzo 2026"
+        # Obtener DÓLAR
+        dolar = wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'USD')]/following::strong[1]")
+        )).text.strip()
 
-        print(f"✅ Datos obtenidos → {fecha} | Euro: {euro} | Dólar: {dolar}")
+        # Obtener FECHA
+        fecha_element = wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Fecha Valor:')]")
+        ))
+
+        fecha = fecha_element.text.split("Fecha Valor:")[-1].strip()
+
+        print(f"✅ Datos obtenidos → {fecha} | EUR: {euro} | USD: {dolar}")
+
         return fecha, euro, dolar
 
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error en scraping: {e}")
         driver.save_screenshot("error.png")
         raise
+
     finally:
         driver.quit()
 
+
+# ===================== GOOGLE SHEETS =====================
 def actualizar_google_sheets(fecha, euro, dolar):
     creds_info = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+
     scope = ["https://www.googleapis.com/auth/spreadsheets"]
     creds = Credentials.from_service_account_info(creds_info, scopes=scope)
-    
+
     gc = gspread.authorize(creds)
+
     sh = gc.open_by_key(os.environ["SHEET_ID"])
     ws = sh.worksheet(os.environ["WORKSHEET_NAME"])
 
-    # Actualiza exactamente las 3 celdas que tú definas
+    # Actualizar celdas
     ws.update(os.environ["DATE_CELL"], fecha)
     ws.update(os.environ["EURO_CELL"], euro)
     ws.update(os.environ["DOLAR_CELL"], dolar)
 
-    print(f"📊 Google Sheets actualizado correctamente")
+    print("📊 Google Sheets actualizado correctamente")
 
+
+# ===================== MAIN =====================
 if __name__ == "__main__":
+    print("🚀 Iniciando scraper BCV...")
+
     fecha, euro, dolar = obtener_tasas_bcv()
     actualizar_google_sheets(fecha, euro, dolar)
+
+    print("✅ Proceso completado con éxito")
