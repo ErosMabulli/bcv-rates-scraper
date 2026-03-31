@@ -19,31 +19,39 @@ def obtener_tasas_bcv():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
 
+    # 🔥 CLAVE: evitar bloqueo del BCV
+    options.add_argument(
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
+
     driver = webdriver.Chrome(options=options)
 
     try:
         driver.get(URL)
-        wait = WebDriverWait(driver, 20)
 
-        # Esperar que cargue algo clave
-        wait.until(EC.presence_of_element_located((By.TAG_NAME, "strong")))
+        # 🔥 CLAVE
+        driver.implicitly_wait(5)
 
-        # Obtener EURO
-        euro = wait.until(EC.presence_of_element_located(
-            (By.XPATH, "//*[contains(text(),'EUR')]/following::strong[1]")
-        )).text.strip()
+        wait = WebDriverWait(driver, 25)
 
-        # Obtener DÓLAR
-        dolar = wait.until(EC.presence_of_element_located(
-            (By.XPATH, "//*[contains(text(),'USD')]/following::strong[1]")
-        )).text.strip()
-
-        # Obtener FECHA
-        fecha_element = wait.until(EC.presence_of_element_located(
-            (By.XPATH, "//*[contains(text(),'Fecha Valor:')]")
+        # Esperar USD (elemento real)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'USD')]")
         ))
 
-        fecha = fecha_element.text.split("Fecha Valor:")[-1].strip()
+        # Obtener datos
+        euro = driver.find_element(
+            By.XPATH, "//*[contains(text(),'EUR')]/following::strong[1]"
+        ).text.strip()
+
+        dolar = driver.find_element(
+            By.XPATH, "//*[contains(text(),'USD')]/following::strong[1]"
+        ).text.strip()
+
+        fecha = driver.find_element(
+            By.XPATH, "//*[contains(text(),'Fecha Valor:')]"
+        ).text.split("Fecha Valor:")[-1].strip()
 
         print(f"✅ Datos obtenidos → {fecha} | EUR: {euro} | USD: {dolar}")
 
