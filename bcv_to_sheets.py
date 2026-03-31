@@ -78,10 +78,10 @@ def actualizar_google_sheets(fecha, euro, dolar):
     sh = gc.open_by_key(os.environ["SHEET_ID"])
     ws = sh.worksheet(os.environ["WORKSHEET_NAME"])
 
-    # Actualizar celdas
-    ws.update(os.environ["DATE_CELL"], [[fecha]])
-    ws.update(os.environ["EURO_CELL"], [[euro]])
-    ws.update(os.environ["DOLAR_CELL"], [[dolar]])
+    # Actualizar celdas con USER_ENTERED para que Google Sheets los trate como números reales
+    ws.update(os.environ["DATE_CELL"], [[fecha]], value_input_option='USER_ENTERED')
+    ws.update(os.environ["EURO_CELL"], [[euro]], value_input_option='USER_ENTERED')
+    ws.update(os.environ["DOLAR_CELL"], [[dolar]], value_input_option='USER_ENTERED')
 
     print("📊 Google Sheets actualizado correctamente")
 
